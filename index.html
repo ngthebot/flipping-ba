@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Flipping BA – 13/04/2026 15:21</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0 }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #eef2f9; color: #1e293b; font-size: 14px; }
+
+    /* ── HEADER ── */
+    header { background: linear-gradient(135deg, #1e3a8a 0%, #3b5bd9 100%); padding: 1.2rem 1.5rem; color: #fff; }
+    header h1 { font-size: 1.4rem; margin-bottom: .2rem }
+    header p  { font-size: .83rem; color: rgba(255,255,255,.75) }
+    .header-stats { display: flex; gap: 1.5rem; margin-top: .6rem; flex-wrap: wrap }
+    .stat { font-size: .8rem; background: rgba(255,255,255,.12); padding: .2rem .6rem; border-radius: 20px }
+
+    /* ── FILTER PANEL ── */
+    .filter-panel {
+      max-width: 1600px; margin: .8rem auto 0; padding: 0 1rem;
+    }
+    .filter-panel-inner {
+      background: #fff; border-radius: 12px; padding: .8rem 1rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,.06);
+      display: flex; flex-wrap: wrap; gap: .7rem; align-items: flex-end;
+    }
+    .filter-group { display: flex; flex-direction: column; gap: .2rem; }
+    .filter-group label { font-size: .68rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: .04em }
+    .filter-group .range-row { display: flex; align-items: center; gap: .3rem }
+    .filter-group input[type=number] {
+      border: 1px solid #cbd5e1; border-radius: 6px; padding: .28rem .5rem;
+      font-size: .82rem; background: #fff; width: 90px; color: #1e293b;
+    }
+    .filter-group select, .filter-group input[type=text] {
+      border: 1px solid #cbd5e1; border-radius: 6px; padding: .28rem .6rem;
+      font-size: .82rem; background: #fff; color: #1e293b;
+    }
+    .filter-group input[type=text] { width: 200px }
+    .range-sep { color: #94a3b8; font-size: .8rem }
+    .results-count {
+      margin-left: auto; font-size: .82rem; font-weight: 700;
+      color: #3b5bd9; background: #eff6ff; padding: .3rem .8rem;
+      border-radius: 20px; white-space: nowrap; align-self: center;
+    }
+
+    /* ── LEGEND ── */
+    .legend {
+      max-width: 1600px; margin: .5rem auto; padding: 0 1rem;
+      display: flex; gap: .8rem; flex-wrap: wrap; align-items: center;
+      font-size: .75rem; color: #64748b;
+    }
+    .leg-box { width: 14px; height: 14px; border-radius: 3px; display: inline-block }
+
+    /* ── TABLE ── */
+    .table-wrapper { max-width: 1600px; margin: 0 auto 2rem; padding: 0 1rem; overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,.07); }
+    thead th {
+      background: #1e3a8a; color: #fff; padding: .6rem .7rem; text-align: left;
+      font-size: .72rem; font-weight: 700; letter-spacing: .04em;
+      text-transform: uppercase; cursor: pointer; user-select: none; white-space: nowrap;
+    }
+    thead th:hover { background: #1e40af }
+    thead th.sorted-asc::after  { content: " ↑" }
+    thead th.sorted-desc::after { content: " ↓" }
+    tbody tr { border-bottom: 1px solid #f1f5f9; transition: background .1s }
+    tbody tr:hover { background: #f8fafc !important }
+    tbody td { padding: .5rem .7rem; vertical-align: top }
+    .row-new { background: #d1fae5 }
+    .row-hot { background: #fef9c3 }
+
+    /* ── BADGES ── */
+    .score-badge { display: inline-block; color: #fff; font-weight: 800; padding: .2rem .5rem; border-radius: 20px; font-size: .8rem; min-width: 32px; text-align: center; }
+    .source-badge { display: inline-block; padding: .1rem .45rem; border-radius: 12px; font-size: .65rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; }
+    .badge-zp    { background: #dbeafe; color: #1e40af }
+    .badge-ap    { background: #ede9fe; color: #5b21b6 }
+    .badge-ml    { background: #fef3c7; color: #92400e }
+    .badge-other { background: #f1f5f9; color: #475569 }
+    .kw-badge { display: inline-block; background: #fce7f3; color: #9d174d; padding: .1rem .4rem; border-radius: 10px; font-size: .65rem; font-weight: 600; margin: .1rem .1rem 0 0; }
+    .ver-btn { display: inline-block; background: #3b5bd9; color: #fff; padding: .25rem .6rem; border-radius: 7px; text-decoration: none; font-size: .78rem; font-weight: 600; white-space: nowrap; }
+    .ver-btn:hover { background: #1e3a8a }
+    .td-heart { text-align: center; padding: .3rem .4rem }
+    .heart-btn { background: none; border: none; cursor: pointer; font-size: 1.2rem; line-height: 1; padding: 0; transition: transform .15s; color: #cbd5e1; }
+    .heart-btn:hover { transform: scale(1.3) }
+    .heart-btn.fav { color: #e11d48 }
+    .desc-toggle { font-size: .75rem; color: #64748b; max-width: 300px }
+    .desc-toggle summary { cursor: pointer; color: #475569 }
+    .td-num   { text-align: right; white-space: nowrap }
+    .td-score { text-align: center }
+    .td-link  { text-align: center }
+    .no-results { text-align: center; padding: 2rem; color: #94a3b8 }
+
+    /* ── LOADING ── */
+    #loading-msg {
+      text-align: center; padding: 3rem; color: #64748b; font-size: .9rem;
+      display: none;
+    }
+
+    /* ── FAVORITOS ── */
+    #favorites-section { max-width: 1600px; margin: 1rem auto; padding: 0 1rem; }
+    .fav-header { display: flex; align-items: center; gap: .6rem; font-size: 1rem; font-weight: 700; color: #1e293b; margin-bottom: .8rem; cursor: pointer; user-select: none; }
+    .fav-count { background: #e11d48; color: #fff; font-size: .7rem; padding: .1rem .45rem; border-radius: 20px; font-weight: 700; }
+    .fav-toggle-icon { font-size: .85rem; color: #64748b }
+    .fav-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: .8rem; }
+    .fav-card { background: #fff; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,.08); padding: 1rem; position: relative; border-left: 4px solid #e11d48; }
+    .fav-card-title { font-weight: 700; font-size: .9rem; margin-bottom: .25rem; padding-right: 2rem; }
+    .fav-card-sub   { font-size: .78rem; color: #64748b; margin-bottom: .5rem; }
+    .fav-card-meta  { display: flex; gap: .5rem; flex-wrap: wrap; margin-bottom: .6rem; }
+    .fav-meta-pill  { background: #f1f5f9; border-radius: 8px; padding: .15rem .45rem; font-size: .72rem; color: #475569; }
+    .fav-card textarea { width: 100%; border: 1px solid #e2e8f0; border-radius: 8px; padding: .4rem .6rem; font-size: .78rem; resize: vertical; font-family: inherit; color: #1e293b; min-height: 56px; background: #f8fafc; }
+    .fav-card textarea:focus { outline: none; border-color: #3b5bd9; background: #fff; }
+    .fav-card textarea::placeholder { color: #94a3b8 }
+    .fav-remove-btn { position: absolute; top: .6rem; right: .6rem; background: none; border: none; cursor: pointer; font-size: 1rem; color: #cbd5e1; line-height: 1; }
+    .fav-remove-btn:hover { color: #e11d48 }
+    .fav-card-link { display: inline-block; margin-top: .5rem; font-size: .75rem; color: #3b5bd9; text-decoration: none; }
+    .fav-card-link:hover { text-decoration: underline }
+
+    footer { text-align: center; padding: 1.5rem; font-size: .72rem; color: #94a3b8 }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🏚 Flipping BA – Oportunidades de compra</h1>
+  <p>PHs en venta · Buenos Aires · Filtros dinámicos</p>
+  <div class="header-stats">
+    <span class="stat">📅 13/04/2026 15:21</span>
+    <span class="stat" id="results-count">Cargando…</span>
+  </div>
+</header>
+
+<!-- ── FAVORITOS ── -->
+<div id="favorites-section" style="display:none">
+  <div class="fav-header" onclick="toggleFavSection()">
+    ❤️ Favoritos
+    <span class="fav-count" id="fav-count">0</span>
+    <span class="fav-toggle-icon" id="fav-toggle-icon">▲</span>
+  </div>
+  <div class="fav-cards" id="fav-cards"></div>
+</div>
+
+<!-- ── FILTROS ── -->
+<div class="filter-panel">
+  <div class="filter-panel-inner">
+
+    <div class="filter-group">
+      <label>Precio USD</label>
+      <div class="range-row">
+        <input type="number" id="f-price-min" placeholder="Min" value="70000" step="5000">
+        <span class="range-sep">—</span>
+        <input type="number" id="f-price-max" placeholder="Max" value="165000" step="5000">
+      </div>
+    </div>
+
+    <div class="filter-group">
+      <label>M² totales</label>
+      <div class="range-row">
+        <input type="number" id="f-m2-min" placeholder="Min" value="45">
+        <span class="range-sep">—</span>
+        <input type="number" id="f-m2-max" placeholder="Max" value="150">
+      </div>
+    </div>
+
+    <div class="filter-group">
+      <label>USD/m² máx</label>
+      <input type="number" id="f-ppm2-max" placeholder="Máx" value="1800" step="100">
+    </div>
+
+    <div class="filter-group">
+      <label>Ambientes</label>
+      <select id="f-amb-min">
+        <option value="0">Cualquiera</option>
+        <option value="2" selected>2+</option>
+        <option value="3">3+</option>
+        <option value="4">4+</option>
+        <option value="5">5+</option>
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <label>Fuente</label>
+      <select id="filter-source">
+        <option value="">Todas</option>
+        <option>Zonaprop</option>
+        <option>Argenprop</option>
+        <option>MercadoLibre</option>
+        <option>Remax</option>
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <label>Barrio</label>
+      <select id="filter-barrio">
+        <option value="">Todos</option>
+        <option>Belgrano</option><option>Coghlan</option><option>Belgrano R</option><option>Núñez</option><option>Saavedra</option><option>Palermo</option><option>Palermo Hollywood</option><option>Belgrano Bajo</option><option>Colegiales</option><option>Barrio River</option><option>Vicente López</option>
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <label>Tipo</label>
+      <select id="filter-type">
+        <option value="">Todos</option>
+        <option value="departamento">Departamento</option>
+        <option value="ph">PH</option>
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <label>Buscar</label>
+      <input type="text" id="search-box" placeholder="🔍 barrio, dirección, keyword…">
+    </div>
+
+    <label id="only-new-btn" style="display:flex;align-items:center;gap:.5rem;cursor:pointer;
+      background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:.35rem .8rem;
+      font-size:.82rem;font-weight:700;color:#166534;align-self:flex-end;white-space:nowrap">
+      <input type="checkbox" id="f-only-new" style="width:15px;height:15px;cursor:pointer;accent-color:#16a34a">
+      ✨ Solo nuevas
+    </label>
+
+    <span class="results-count" id="results-count-badge">Cargando…</span>
+  </div>
+</div>
+
+<div class="legend">
+  <span>Leyenda:</span>
+  <span><span class="leg-box" style="background:#d1fae5"></span> Propiedad nueva</span>
+  <span><span class="leg-box" style="background:#fef9c3"></span> Score &gt; 70</span>
+  <span>💡 Click en columna para ordenar</span>
+</div>
+
+<div class="table-wrapper">
+  <div id="loading-msg">⏳ Cargando propiedades…</div>
+  <table id="results-table">
+    <thead>
+      <tr>
+        <th style="cursor:default">❤</th>
+        <th data-col="score"     data-type="num">Score</th>
+        <th data-col="source"    data-type="str">Fuente</th>
+        <th data-col="barrio"    data-type="str">Barrio</th>
+        <th data-col="address"   data-type="str">Dirección</th>
+        <th data-col="type"      data-type="str">Tipo</th>
+        <th data-col="m2"        data-type="num">m² cub.</th>
+        <th data-col="m2_desc"   data-type="num">m² desc.</th>
+        <th data-col="m2_tot"    data-type="num">m² tot.</th>
+        <th data-col="ambientes" data-type="num">Amb.</th>
+        <th data-col="price"     data-type="num">Precio USD</th>
+        <th data-col="ppm2"      data-type="num">USD/m²</th>
+        <th data-col="expensas"  data-type="num">Expensas</th>
+        <th data-col="ant"        data-type="str">Antigüedad</th>
+        <th data-col="first_seen" data-type="str">Visto desde</th>
+        <th>Link</th>
+      </tr>
+    </thead>
+    <tbody id="table-body"></tbody>
+  </table>
+</div>
+
+<footer>Generado el 13/04/2026 15:21 (hora local) · flipping-scraper · Precios orientativos, verificar en cada portal.</footer>
+
+<script>
+
+// ── Supabase REST helpers (fetch directo, sin SDK) ────────────────────────────
+const SB_URL = 'https://ljyampobimjskotgwdmq.supabase.co';
+const SB_KEY = 'sb_publishable_PWbXyJDr519BZGE02dBAZA_neVYjp24';
+
+function sbHeaders(extra) {
+  return Object.assign({
+    'apikey': SB_KEY,
+    'Authorization': 'Bearer ' + SB_KEY,
+    'Content-Type': 'application/json',
+  }, extra || {});
+}
+async function sbGet(table, query) {
+  const r = await fetch(SB_URL + '/rest/v1/' + table + '?' + (query||'select=*'), { headers: sbHeaders() });
+  return r.json();
+}
+async function sbPost(table, body, prefer) {
+  const h = sbHeaders(prefer ? { 'Prefer': prefer } : {});
+  return fetch(SB_URL + '/rest/v1/' + table, { method: 'POST', headers: h, body: JSON.stringify(body) });
+}
+async function sbPatch(table, filter, body) {
+  return fetch(SB_URL + '/rest/v1/' + table + '?' + filter, { method: 'PATCH', headers: sbHeaders(), body: JSON.stringify(body) });
+}
+async function sbDelete(table, filter) {
+  return fetch(SB_URL + '/rest/v1/' + table + '?' + filter, { method: 'DELETE', headers: sbHeaders() });
+}
+
+// ── Estado global ─────────────────────────────────────────────────────────────
+let allProperties = [];
+let cachedFavs    = {};   // favoritos en memoria, sin llamadas repetidas a Supabase
+let sortCol = 'first_seen';
+let sortAsc  = false;
+const HIGH_SCORE_THRESHOLD = 70;
+
+// ── Formatters ────────────────────────────────────────────────────────────────
+function fmtUSD(v)  { return v ? 'USD ' + parseInt(v).toLocaleString('es-AR') : '—'; }
+function fmtM2(v)   { return v && v > 0 ? parseInt(v).toString() : '—'; }
+function fmtExp(v)  { return v ? '$' + parseInt(v).toLocaleString('es-AR') : '—'; }
+function fmtDate(v) {
+  if (!v) return '—';
+  const d = new Date(v);
+  return d.toLocaleDateString('es-AR', { day:'2-digit', month:'2-digit', year:'2-digit' });
+}
+function fmtAnt(v)  {
+  if (v === null || v === undefined) return '—';
+  if (v === 0) return 'A estrenar';
+  return v + ' años';
+}
+function esc(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function scoreColor(s) { return s >= 70 ? '#16a34a' : s >= 40 ? '#ca8a04' : '#dc2626'; }
+function sourceCls(src) {
+  return {'Zonaprop':'badge-zp','Argenprop':'badge-ap','MercadoLibre':'badge-ml'}[src] || 'badge-other';
+}
+
+// ── Render fila ───────────────────────────────────────────────────────────────
+function renderRow(p) {
+  const score  = p.score || 0;
+  const kws    = Array.isArray(p.keywords_found) ? p.keywords_found
+    : (typeof p.keywords_found === 'string' ? JSON.parse(p.keywords_found || '[]') : []);
+  const m2tot  = parseFloat(((p.m2 || 0) + (p.m2_uncovered || 0) * 0.5).toFixed(1));
+  const rowCls = p.is_new ? 'row-new' : (score >= HIGH_SCORE_THRESHOLD ? 'row-hot' : '');
+  const kwHtml = kws.length
+    ? kws.map(k => '<span class="kw-badge">' + esc(k) + '</span>').join(' ')
+    : '—';
+  const descHtml = p.description
+    ? '<details class="desc-toggle"><summary>' + esc(p.description.substring(0,120)) +
+      (p.description.length > 120 ? '…' : '') + '</summary>' + esc(p.description) + '</details>'
+    : '';
+
+  return '<tr class="' + rowCls + '" data-id="' + esc(p.id) + '"' +
+    ' data-source="' + esc(p.source) + '" data-barrio="' + esc(p.barrio) + '"' +
+    ' data-address="' + esc(p.address) + '" data-price="' + (p.price_usd||0) + '"' +
+    ' data-ppm2="' + (p.price_per_m2||0) + '" data-m2="' + (p.m2||0) + '"' +
+    ' data-m2tot="' + m2tot + '" data-url="' + esc(p.url) + '">' +
+    '<td class="td-heart"><button class="heart-btn" onclick="toggleFav(this.parentElement.parentElement.dataset.id, this)" title="Favorito">♡</button></td>' +
+    '<td class="td-score"><span class="score-badge" style="background:' + scoreColor(score) + '">' + score + '</span></td>' +
+    '<td><span class="source-badge ' + sourceCls(p.source) + '">' + esc(p.source||'') + '</span></td>' +
+    '<td class="td-barrio">'  + esc(p.barrio||'—')  + '</td>' +
+    '<td class="td-address">' + esc(p.address||'—') + '</td>' +
+    '<td class="td-type">'    + esc((p.prop_type||'').toUpperCase()||'—') + '</td>' +
+    '<td class="td-num" data-val="' + (p.m2||0)           + '">' + fmtM2(p.m2)           + '</td>' +
+    '<td class="td-num" data-val="' + (p.m2_uncovered||0)  + '">' + fmtM2(p.m2_uncovered) + '</td>' +
+    '<td class="td-num" data-val="' + m2tot               + '">' + (p.m2 ? m2tot : '—')  + '</td>' +
+    '<td class="td-num" data-val="' + (p.ambientes||0)     + '">' + (p.ambientes||'—')    + '</td>' +
+    '<td class="td-num" data-val="' + (p.price_usd||0)     + '">' + fmtUSD(p.price_usd)   + '</td>' +
+    '<td class="td-num" data-val="' + (p.price_per_m2||0)  + '">' + fmtUSD(p.price_per_m2)+ '</td>' +
+    '<td class="td-num">' + fmtExp(p.expensas) + '</td>' +
+    '<td class="td-ant">' + fmtAnt(p.antiguedad) + '</td>' +
+    '<td class="td-date">' + fmtDate(p.first_seen) + '</td>' +
+    '<td class="td-link"><a href="' + esc(p.url||'#') + '" target="_blank" rel="noopener" class="ver-btn">Ver →</a></td>' +
+    '</tr>';
+}
+
+// ── Sorting ───────────────────────────────────────────────────────────────────
+const tbody   = document.getElementById('table-body');
+const headers = document.querySelectorAll('thead th[data-col]');
+
+const colFn = {
+  score:     p => p.score || 0,
+  source:    p => p.source || '',
+  barrio:    p => p.barrio || '',
+  address:   p => p.address || '',
+  type:      p => p.prop_type || '',
+  m2:        p => p.m2 || 0,
+  m2_desc:   p => p.m2_uncovered || 0,
+  m2_tot:    p => (p.m2||0) + (p.m2_uncovered||0)*0.5,
+  ambientes: p => p.ambientes || 0,
+  price:     p => p.price_usd || 0,
+  ppm2:      p => p.price_per_m2 || 0,
+  expensas:  p => p.expensas || 0,
+  days:      p => p.days_listed || 0,
+  ant:       p => p.antiguedad != null ? p.antiguedad : 9999,
+  first_seen: p => p.first_seen || '',
+};
+
+function sortProps(props) {
+  const fn = colFn[sortCol] || (() => 0);
+  return [...props].sort((a, b) => {
+    const va = fn(a), vb = fn(b);
+    const cmp = typeof va === 'string'
+      ? va.toLowerCase().localeCompare(vb.toLowerCase())
+      : va - vb;
+    return sortAsc ? cmp : -cmp;
+  });
+}
+
+headers.forEach(th => {
+  th.addEventListener('click', () => {
+    const col = th.dataset.col;
+    if (sortCol === col) sortAsc = !sortAsc; else { sortCol = col; sortAsc = true; }
+    renderTable();
+  });
+});
+
+// ── Filtros ───────────────────────────────────────────────────────────────────
+function getFilters() {
+  return {
+    priceMin: parseFloat(document.getElementById('f-price-min').value) || 0,
+    priceMax: parseFloat(document.getElementById('f-price-max').value) || Infinity,
+    m2Min:    parseFloat(document.getElementById('f-m2-min').value)    || 0,
+    m2Max:    parseFloat(document.getElementById('f-m2-max').value)    || Infinity,
+    ppm2Max:  parseFloat(document.getElementById('f-ppm2-max').value)  || Infinity,
+    ambMin:   parseInt(document.getElementById('f-amb-min').value)     || 0,
+    source:   document.getElementById('filter-source').value.toLowerCase(),
+    barrio:   document.getElementById('filter-barrio').value.toLowerCase(),
+    type:     document.getElementById('filter-type').value.toLowerCase(),
+    search:   document.getElementById('search-box').value.toLowerCase(),
+    onlyNew:  document.getElementById('f-only-new').checked,
+  };
+}
+
+function getLatestDate() {
+  // Fecha del run más reciente entre todas las propiedades
+  return allProperties.reduce((max, p) => {
+    return p.first_seen > max ? p.first_seen : max;
+  }, '');
+}
+
+function filterProps(props) {
+  const f = getFilters();
+  const latestDate = f.onlyNew ? getLatestDate().substring(0, 10) : null;
+  return props.filter(p => {
+    const m2tot = (p.m2||0) + (p.m2_uncovered||0)*0.5;
+    if (f.priceMin && (p.price_usd||0) < f.priceMin) return false;
+    if (f.priceMax < Infinity && (p.price_usd||0) > f.priceMax) return false;
+    if (p.m2 && m2tot < f.m2Min) return false;
+    if (p.m2 && f.m2Max < Infinity && m2tot > f.m2Max) return false;
+    if (p.price_per_m2 && f.ppm2Max < Infinity && p.price_per_m2 > f.ppm2Max) return false;
+    if (f.ambMin && p.ambientes && p.ambientes < f.ambMin) return false;
+    if (f.source && !(p.source||'').toLowerCase().includes(f.source)) return false;
+    if (f.barrio && !(p.barrio||'').toLowerCase().includes(f.barrio)) return false;
+    if (f.type   && !(p.prop_type||'').toLowerCase().includes(f.type)) return false;
+    if (f.search) {
+      const kws = Array.isArray(p.keywords_found) ? p.keywords_found : [];
+      const txt = [p.barrio||'', p.address||'', p.source||'', p.title||'', ...kws].join(' ').toLowerCase();
+      if (!txt.includes(f.search)) return false;
+    }
+    if (f.onlyNew && (!p.first_seen || p.first_seen.substring(0,10) !== latestDate)) return false;
+    return true;
+  });
+}
+
+// ── Render tabla ──────────────────────────────────────────────────────────────
+function renderTable() {
+  const filtered = filterProps(allProperties);
+  const sorted   = sortProps(filtered);
+
+  headers.forEach(h => h.classList.remove('sorted-asc','sorted-desc'));
+  const activeH = [...headers].find(h => h.dataset.col === sortCol);
+  if (activeH) activeH.classList.add(sortAsc ? 'sorted-asc' : 'sorted-desc');
+
+  tbody.innerHTML = sorted.length
+    ? sorted.map(renderRow).join('')
+    : '<tr><td colspan="16" class="no-results">Sin resultados con los filtros actuales.</td></tr>';
+
+  const total = allProperties.length;
+  document.getElementById('results-count').textContent =
+    filtered.length + (filtered.length !== total ? ' de ' + total : '') +
+    ' resultado' + (filtered.length !== 1 ? 's' : '');
+
+  // Restaurar corazones desde cache (sin llamada a Supabase)
+  document.querySelectorAll('tr[data-id]').forEach(row => {
+    const btn = row.querySelector('.heart-btn');
+    if (btn) {
+      if (cachedFavs[row.dataset.id]) { btn.textContent = '♥'; btn.classList.add('fav'); }
+      else { btn.textContent = '♡'; btn.classList.remove('fav'); }
+    }
+  });
+}
+
+// ── Cargar propiedades y favoritos en paralelo ────────────────────────────────
+async function loadProperties() {
+  const loadingEl = document.getElementById('loading-msg');
+  loadingEl.style.display = '';
+  tbody.innerHTML = '';
+
+  let propsData, favsData;
+  try {
+    [propsData, favsData] = await Promise.all([
+      sbGet('properties', 'select=*'),
+      sbGet('favorites',  'select=*'),
+    ]);
+  } catch(err) {
+    loadingEl.style.display = 'none';
+    tbody.innerHTML = '<tr><td colspan="16" class="no-results">Error de red: ' + err.message + '</td></tr>';
+    console.error('loadProperties error:', err);
+    return;
+  }
+
+  loadingEl.style.display = 'none';
+
+  if (!Array.isArray(propsData)) {
+    const msg = propsData && propsData.message ? propsData.message : JSON.stringify(propsData);
+    tbody.innerHTML = '<tr><td colspan="16" class="no-results">Error Supabase: ' + msg + '</td></tr>';
+    console.error('propsData:', propsData);
+    return;
+  }
+
+  // Cachear favoritos en memoria
+  cachedFavs = {};
+  if (Array.isArray(favsData)) favsData.forEach(r => { cachedFavs[r.prop_id] = { comment: r.comment || '' }; });
+
+  allProperties = propsData;
+  renderTable();
+  renderFavSection(cachedFavs);
+}
+
+// ── Event listeners de filtros ────────────────────────────────────────────────
+['f-price-min','f-price-max','f-m2-min','f-m2-max','f-ppm2-max',
+ 'f-amb-min','filter-source','filter-barrio','filter-type','search-box','f-only-new']
+  .forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('input', renderTable); });
+document.getElementById('f-only-new').addEventListener('change', renderTable);
+
+// ── Favoritos (Supabase compartido, con cache local) ─────────────────────────
+async function getFavs() {
+  const data = await sbGet('favorites', 'select=*');
+  cachedFavs = {};
+  if (Array.isArray(data)) data.forEach(r => { cachedFavs[r.prop_id] = { comment: r.comment || '' }; });
+  return cachedFavs;
+}
+
+async function toggleFav(propId, btn) {
+  if (cachedFavs[propId]) {
+    await sbDelete('favorites', 'prop_id=eq.' + encodeURIComponent(propId));
+    delete cachedFavs[propId];
+    btn.textContent = '♡'; btn.classList.remove('fav');
+  } else {
+    await sbPost('favorites', { prop_id: propId, comment: '', updated_at: new Date().toISOString() }, 'resolution=merge-duplicates');
+    cachedFavs[propId] = { comment: '' };
+    btn.textContent = '♥'; btn.classList.add('fav');
+  }
+  renderFavSection(cachedFavs);
+}
+
+const _debounceTimers = {};
+function saveComment(propId, text) {
+  clearTimeout(_debounceTimers[propId]);
+  _debounceTimers[propId] = setTimeout(async () => {
+    await sbPatch('favorites', 'prop_id=eq.' + encodeURIComponent(propId), { comment: text, updated_at: new Date().toISOString() });
+  }, 800);
+}
+
+async function removeFav(propId) {
+  await sbDelete('favorites', 'prop_id=eq.' + encodeURIComponent(propId));
+  delete cachedFavs[propId];
+  const row = document.querySelector('tr[data-id="' + propId + '"]');
+  if (row) { const btn = row.querySelector('.heart-btn'); if (btn) { btn.textContent = '♡'; btn.classList.remove('fav'); } }
+  renderFavSection(cachedFavs);
+}
+
+let favSectionOpen = true;
+function toggleFavSection() {
+  favSectionOpen = !favSectionOpen;
+  document.getElementById('fav-cards').style.display = favSectionOpen ? '' : 'none';
+  document.getElementById('fav-toggle-icon').textContent = favSectionOpen ? '▲' : '▼';
+}
+
+function renderFavSection(favs) {
+  const ids     = Object.keys(favs);
+  const section = document.getElementById('favorites-section');
+  const cards   = document.getElementById('fav-cards');
+  const count   = document.getElementById('fav-count');
+  count.textContent = ids.length;
+  if (ids.length === 0) { section.style.display = 'none'; return; }
+  section.style.display = '';
+
+  const liveComments = {};
+  cards.querySelectorAll('[data-prop-card]').forEach(card => {
+    const ta = card.querySelector('textarea');
+    if (ta) liveComments[card.dataset.propCard] = ta.value;
+  });
+
+  cards.innerHTML = '';
+  ids.forEach(propId => {
+    const p = allProperties.find(x => x.id === propId) || {};
+    const comment = liveComments[propId] !== undefined ? liveComments[propId] : (favs[propId].comment || '');
+    const m2tot   = ((p.m2||0) + (p.m2_uncovered||0)*0.5).toFixed(0);
+
+    const card = document.createElement('div');
+    card.className = 'fav-card';
+    card.dataset.propCard = propId;
+
+    const removeBtn = document.createElement('button');
+    removeBtn.className = 'fav-remove-btn'; removeBtn.title = 'Quitar de favoritos'; removeBtn.textContent = '✕';
+    removeBtn.onclick = () => removeFav(propId);
+
+    const titleEl = document.createElement('div');
+    titleEl.className = 'fav-card-title';
+    titleEl.textContent = (p.barrio||propId) + (p.address ? ' · ' + p.address : '');
+
+    const subEl = document.createElement('div');
+    subEl.className = 'fav-card-sub';
+    subEl.textContent = (p.source||'') + ' · ' + propId;
+
+    const metaEl = document.createElement('div');
+    metaEl.className = 'fav-card-meta';
+    if (p.price_usd) metaEl.innerHTML += '<span class="fav-meta-pill">💰 ' + fmtUSD(p.price_usd) + '</span>';
+    if (p.price_per_m2) metaEl.innerHTML += '<span class="fav-meta-pill">📐 ' + fmtUSD(p.price_per_m2) + '/m²</span>';
+    if (p.m2) metaEl.innerHTML += '<span class="fav-meta-pill">📏 ' + m2tot + ' m² tot.</span>';
+
+    const ta = document.createElement('textarea');
+    ta.placeholder = 'Notas: visitada, contactada, precio negociado…';
+    ta.value = comment;
+    ta.oninput = () => saveComment(propId, ta.value);
+
+    const link = document.createElement('a');
+    link.href = p.url||'#'; link.target = '_blank'; link.rel = 'noopener';
+    link.className = 'fav-card-link'; link.textContent = 'Ver publicación →';
+
+    card.appendChild(removeBtn); card.appendChild(titleEl); card.appendChild(subEl);
+    card.appendChild(metaEl); card.appendChild(ta); card.appendChild(link);
+    cards.appendChild(card);
+  });
+}
+
+async function initFavHearts() {
+  const favs = await getFavs();
+  document.querySelectorAll('tr[data-id]').forEach(row => {
+    const btn = row.querySelector('.heart-btn');
+    if (!btn) return;
+    if (favs[row.dataset.id]) { btn.textContent = '♥'; btn.classList.add('fav'); }
+    else { btn.textContent = '♡'; btn.classList.remove('fav'); }
+  });
+  renderFavSection(favs);
+}
+
+// Polling favoritos cada 30s (reemplaza real-time del SDK)
+setInterval(async () => {
+  await getFavs();
+  renderTable();
+  renderFavSection(cachedFavs);
+}, 30000);
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+loadProperties();
+
+// Sync results-count badge
+setInterval(() => {
+  const main = document.getElementById('results-count');
+  const badge = document.getElementById('results-count-badge');
+  if (main && badge && main.textContent) badge.textContent = main.textContent;
+}, 300);
+</script>
+</body>
+</html>
